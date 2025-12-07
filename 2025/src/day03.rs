@@ -21,22 +21,35 @@ pub fn main() {
             biggest = max(biggest, dig * 10 + so_far);
             so_far = max(so_far, dig);
         }
-        fn twelve_largest_dp(cur: &Vec<u64>) -> u64 {
-            let n = cur.len();
-            let mut dp: Vec<Vec<u64>> = vec![vec![0; 13]; n + 1];
-            for i in 1..=n {
-                let dig = cur[i - 1];
-                for j in 1..=12 {
-                    dp[i][j] = dp[i - 1][j];
-                    if dp[i - 1][j - 1] * 10 + dig > dp[i][j] {
-                        dp[i][j] = dp[i - 1][j - 1] * 10 + dig;
-                    }
-                }
+        let mut to_remove = cur.len() - 12;
+        let mut stack = vec![];
+        for (i, &digit) in cur.iter().enumerate() {
+            while !stack.is_empty()
+                && *stack.last().unwrap() < digit
+                && to_remove > 0
+                && (stack.len() + cur.len() - i - 1) >= 12
+            {
+                stack.pop();
+                to_remove -= 1;
             }
-            dp[n][12]
+            stack.push(digit);
         }
+        // fn twelve_largest_dp(cur: &Vec<u64>) -> u64 {
+        //     let n = cur.len();
+        //     let mut dp: Vec<Vec<u64>> = vec![vec![0; 13]; n + 1];
+        //     for i in 1..=n {
+        //         let dig = cur[i - 1];
+        //         for j in 1..=12 {
+        //             dp[i][j] = dp[i - 1][j];
+        //             if dp[i - 1][j - 1] * 10 + dig > dp[i][j] {
+        //                 dp[i][j] = dp[i - 1][j - 1] * 10 + dig;
+        //             }
+        //         }
+        //     }
+        //     dp[n][12]
+        // }
         silver += biggest;
-        gold += twelve_largest_dp(&cur) as u64;
+        gold += stack.iter().take(12).fold(0u64, |acc, &d| acc * 10 + d);
     });
     println!("silver: {}", silver);
     println!("gold: {}", gold);
