@@ -36,7 +36,6 @@ pub fn main() {
             silver += 1;
             gold += 1;
         }
-        println!("gold: {}", gold);
     });
     println!("silver: {}", silver);
     println!("gold: {}", gold);
