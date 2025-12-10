@@ -5,6 +5,7 @@ mod day04;
 mod day05;
 mod day06;
 mod day07;
+mod day08;
 
 // mod day19;
 fn main() {
@@ -23,6 +24,7 @@ fn main() {
         5 => day05::main(),
         6 => day06::main(),
         7 => day07::main(),
+        8 => day08::main(),
         // 10 => day10::main(),
         // 19 => day19::main(),
         _ => eprintln!("Day {} not implemented", day),
