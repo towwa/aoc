@@ -11,22 +11,20 @@ struct Slab {
 }
 
 fn find_slab(slabs: &[Slab], x: i64) -> Option<usize> {
+    // Slabs are sorted by start. Find the last slab whose start is <= x,
+    // then verify x is not in a gap after that slab's end.
     let idx = slabs.partition_point(|slab| slab.start <= x);
     if idx == 0 {
         return None;
     }
     let idx = idx - 1;
-    if x <= slabs[idx].end {
-        Some(idx)
-    } else {
-        None
-    }
+    if x <= slabs[idx].end { Some(idx) } else { None }
 }
 
 fn slab_contains(slab: &Slab, y1: i64, y2: i64) -> bool {
-    slab.intervals
-        .iter()
-        .any(|&(lo, hi)| lo <= y1 && y2 <= hi)
+    // A rectangle column fits in this slab if one inside interval covers
+    // the rectangle's full vertical span.
+    slab.intervals.iter().any(|&(lo, hi)| lo <= y1 && y2 <= hi)
 }
 
 pub fn main() {
@@ -50,6 +48,10 @@ pub fn main() {
     let mut add_events: HashMap<i64, Vec<i64>> = HashMap::new();
     let mut remove_events: HashMap<i64, Vec<i64>> = HashMap::new();
     let mut event_xs = Vec::new();
+
+    // Turn every horizontal polygon edge into scanline events.
+    // While sweeping left to right, this edge contributes a y-boundary
+    // between its left x and right x.
     for (p1, p2) in points
         .iter()
         .zip(points.iter().cycle().skip(1))
@@ -72,10 +74,17 @@ pub fn main() {
 
     let mut active_counts: HashMap<i64, usize> = HashMap::new();
     let mut slabs = Vec::new();
+
+    // Build x-slabs between consecutive event x values. Within one slab,
+    // the active horizontal boundaries do not change, so the inside y-ranges
+    // are constant for every x-column in that slab.
     for window in event_xs.windows(2) {
         let x = window[0];
         let next_x = window[1];
 
+        // Update active boundaries at the left edge of this slab.
+        // Removals happen before additions so an edge ending here is not
+        // active for the slab starting here, while an edge starting here is.
         if let Some(ys) = remove_events.get(&x) {
             for &y in ys {
                 if let Some(count) = active_counts.get_mut(&y) {
@@ -99,6 +108,9 @@ pub fn main() {
         let mut boundaries = active_counts.keys().cloned().collect::<Vec<_>>();
         boundaries.sort_unstable();
         let mut intervals = Vec::new();
+
+        // Crossing sorted boundaries toggles outside/inside. Pair them up:
+        // [bottom, top, bottom, top] becomes inside intervals.
         for chunk in boundaries.chunks(2) {
             if let [y1, y2] = chunk {
                 intervals.push((*y1, *y2));
@@ -120,6 +132,9 @@ pub fn main() {
             let dy = (p1.1 - p2.1).abs() + 1;
             let area = dx * dy;
             silver = silver.max(area);
+
+            // Gold only cares about rectangles larger than the best valid
+            // rectangle already found.
             if area <= gold as i64 {
                 continue;
             }
@@ -141,6 +156,9 @@ pub fn main() {
                     break;
                 }
                 let slab = &slabs[slab_idx];
+
+                // The rectangle is valid only if each slab across its width
+                // exists and contains the rectangle's full y-span.
                 if slab.start > current_x || !slab_contains(slab, y1, y2) {
                     valid = false;
                     break;
